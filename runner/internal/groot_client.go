@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"log"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -21,7 +23,7 @@ type ActionGraph struct {
 type Action struct {
 	Name    string  `json:"name,omitempty"`
 	Inputs  []*Port `json:"inputs,omitempty"`
-	Outputs []*Port `json:"inputsomitempty"`
+	Outputs []*Port `json:"outputs,omitempty"`
 	// TODO: Add configs.
 }
 
@@ -33,12 +35,13 @@ type Chunk struct {
 
 type StreamFrame struct {
 	StreamID  string `json:"stream_id,omitempty"`
-	Data      *Chunk `json:"chunk,omitempty"`
+	Data      *Chunk `json:"data,omitempty"`
 	Continued bool   `json:"continued,omitempty"`
 }
 
 type executeActionsMsg struct {
 	SessionID    string         `json:"session_id,omitempty"`
+	ActionGraph  *ActionGraph   `json:"action_graph,omitempty"`
 	StreamFrames []*StreamFrame `json:"stream_frames,omitempty"`
 }
 
@@ -72,11 +75,26 @@ func (c *Client) OpenSession(sessionID string) (*Session, error) {
 func (s *Session) ExecuteActions(actions []*Action, outputs []string) error {
 	if err := s.c.conn.WriteJSON(&executeActionsMsg{
 		SessionID: s.sessionID,
+		ActionGraph: &ActionGraph{
+			Actions: []*Action{
+				{
+					Name:    "save_stream",
+					Inputs:  []*Port{{Name: "input", StreamID: "test"}},
+					Outputs: []*Port{{Name: "ouput", StreamID: "test1"}},
+				},
+			},
+			Outputs: []*Port{{Name: "ouput", StreamID: "test1"}},
+		},
 		StreamFrames: []*StreamFrame{
 			{StreamID: "test", Data: &Chunk{MIMEType: "text/plain", Data: []byte("hello world")}},
 		},
 	}); err != nil {
 		return err
 	}
+	var resp executeActionsMsg
+	if err := s.c.conn.ReadJSON(&resp); err != nil {
+		return err
+	}
+	log.Println(resp)
 	panic("not yet")
 }
