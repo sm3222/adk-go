@@ -22,6 +22,7 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/net/http2"
@@ -30,12 +31,14 @@ import (
 	"github.com/a2aproject/a2a-go/a2agrpc"
 	"github.com/a2aproject/a2a-go/a2asrv"
 	"github.com/gorilla/mux"
+	"google.golang.org/adk/adka2a"
 	"google.golang.org/adk/artifact"
 	"google.golang.org/adk/cmd/restapi/config"
 	"google.golang.org/adk/cmd/restapi/handlers"
 	"google.golang.org/adk/cmd/restapi/services"
 	restapiweb "google.golang.org/adk/cmd/restapi/web"
 	"google.golang.org/adk/session"
+	"google.golang.org/grpc"
 )
 
 // WebConfig is a struct with parameters to run a WebServer.
@@ -43,6 +46,7 @@ type WebConfig struct {
 	LocalPort       int
 	FrontendAddress string
 	BackendAddress  string
+	StartA2A        bool
 }
 
 // ParseArgs parses the arguments for the ADK API server.
@@ -50,6 +54,7 @@ func ParseArgs() *WebConfig {
 	localPortFlag := flag.Int("port", 8080, "Localhost port for the server")
 	frontendAddressFlag := flag.String("front_address", "localhost:8080", "Front address to allow CORS requests from as seen from the user browser. Please specify only hostname and (optionally) port")
 	backendAddressFlag := flag.String("backend_address", "http://localhost:8080/api", "Backend server as seen from the user browser. Please specify the whole URL, i.e. 'http://localhost:8080/api'. ")
+	startA2A := flag.Bool("a2a", true, "Start A2A gRPC server")
 
 	flag.Parse()
 	if !flag.Parsed() {
@@ -60,6 +65,7 @@ func ParseArgs() *WebConfig {
 		LocalPort:       *localPortFlag,
 		FrontendAddress: *frontendAddressFlag,
 		BackendAddress:  *backendAddressFlag,
+		StartA2A:        *startA2A,
 	})
 }
 
@@ -82,6 +88,7 @@ type ServeConfig struct {
 	SessionService  session.Service
 	AgentLoader     services.AgentLoader
 	ArtifactService artifact.Service
+	A2AOptions      []a2asrv.RequestHandlerOption
 }
 
 func corsWithArgs(c *WebConfig) func(next http.Handler) http.Handler {
