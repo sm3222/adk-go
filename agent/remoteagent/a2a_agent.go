@@ -35,9 +35,9 @@ type A2AConfig struct {
 	Name        string
 	Description string
 
-	AgentCard *a2a.AgentCard
 	// AgentCardSource can be either an http(s) URL or a local file path. If a2a.AgentCard
 	// is not provided, the source is used to resolve the card during the first agent invocation.
+	AgentCard       *a2a.AgentCard
 	AgentCardSource string
 	// CardResolveOptions can be used to provide a set of agencard.Resolver configurations.
 	CardResolveOptions []agentcard.ResolveOption
@@ -52,21 +52,17 @@ type A2AConfig struct {
 // agent which can run in a different process or on a different host.
 func New(cfg A2AConfig) (agent.Agent, error) {
 	if cfg.AgentCard == nil && cfg.AgentCardSource == "" {
-		return nil, fmt.Errorf("either AgentCard, or AgentCardPath, or AgentCardURL must be provided")
+		return nil, fmt.Errorf("either AgentCard or AgentCardSource must be provided")
 	}
 
 	remoteAgent := &a2aAgent{resolvedCard: cfg.AgentCard}
-	a2aAgent, err := agent.New(agent.Config{
+	return agent.New(agent.Config{
 		Name:        cfg.Name,
 		Description: cfg.Description,
 		Run: func(ic agent.InvocationContext) iter.Seq2[*session.Event, error] {
 			return remoteAgent.run(ic, cfg)
 		},
 	})
-	if err != nil {
-		return nil, err
-	}
-	return a2aAgent, err
 }
 
 type a2aAgent struct {
@@ -124,7 +120,9 @@ func (a *a2aAgent) run(ctx agent.InvocationContext, cfg A2AConfig) iter.Seq2[*se
 				continue
 			}
 			updateCustomMetadata(event, req, a2aEvent)
-			yield(event, nil)
+			if !yield(event, nil) {
+				break
+			}
 		}
 	}
 }
@@ -136,17 +134,21 @@ func resolveAgentCard(ctx agent.InvocationContext, cfg A2AConfig) (*a2a.AgentCar
 
 	if strings.HasPrefix(cfg.AgentCardSource, "http://") || strings.HasPrefix(cfg.AgentCardSource, "https://") {
 		resolver := agentcard.Resolver{BaseURL: cfg.AgentCardSource}
-		return resolver.Resolve(ctx, cfg.CardResolveOptions...)
+		card, err := resolver.Resolve(ctx, cfg.CardResolveOptions...)
+		if err != nil {
+			return nil, fmt.Errorf("failed to fetch an agent card: %w", err)
+		}
+		return card, nil
 	}
 
 	fileBytes, err := os.ReadFile(cfg.AgentCardSource)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to read agent card from %q: %w", cfg.AgentCardSource, err)
 	}
 
 	var card *a2a.AgentCard
 	if err := json.Unmarshal(fileBytes, card); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to unmarshal an agent card: %w", err)
 	}
 
 	return card, nil
