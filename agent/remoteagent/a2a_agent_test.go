@@ -46,14 +46,6 @@ import (
 
 const connBufSize int = 1024 * 1024
 
-type staticCardProducer struct {
-	card *a2a.AgentCard
-}
-
-func (p *staticCardProducer) Card() *a2a.AgentCard {
-	return p.card
-}
-
 type mockExecutor struct {
 	executeFn func(ctx context.Context, reqCtx *a2asrv.RequestContext, queue eventqueue.Queue) error
 }
@@ -73,7 +65,7 @@ func (e *mockExecutor) Cancel(ctx context.Context, reqCtx *a2asrv.RequestContext
 
 func startA2AServer(t *testing.T, agentExecutor a2asrv.AgentExecutor, listener *bufconn.Listener) {
 	requestHandler := a2asrv.NewHandler(agentExecutor)
-	grpcHandler := a2agrpc.NewHandler(&staticCardProducer{&a2a.AgentCard{}}, requestHandler)
+	grpcHandler := a2agrpc.NewHandler(requestHandler)
 
 	s := grpc.NewServer()
 	t.Cleanup(s.Stop)
