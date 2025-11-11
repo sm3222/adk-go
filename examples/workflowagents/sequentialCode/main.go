@@ -22,7 +22,7 @@ import (
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/agent/workflowagents/sequentialagent"
-	"google.golang.org/adk/cmd/launcher/adk"
+	"google.golang.org/adk/cmd/launcher"
 	"google.golang.org/adk/cmd/launcher/full"
 	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/server/restapi/services"
@@ -139,7 +139,7 @@ Do not add any other text before or after the code block.`,
 	// The rootAgent can now be used by the ADK framework.
 	log.Printf("Successfully created root agent: %s", rootAgent.Name())
 
-	config := &adk.Config{
+	config := &launcher.Config{
 		AgentLoader: services.NewSingleAgentLoader(rootAgent),
 	}
 	l := full.NewLauncher()

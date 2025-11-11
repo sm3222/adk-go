@@ -27,7 +27,7 @@ import (
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/agent/remoteagent"
-	"google.golang.org/adk/cmd/launcher/adk"
+	"google.golang.org/adk/cmd/launcher"
 	"google.golang.org/adk/cmd/launcher/full"
 	"google.golang.org/adk/model/gemini"
 	"google.golang.org/adk/runner"
@@ -119,7 +119,7 @@ func main() {
 		log.Fatalf("Failed to create a remote agent: %v", err)
 	}
 
-	config := &adk.Config{
+	config := &launcher.Config{
 		AgentLoader: services.NewSingleAgentLoader(remoteAgent),
 	}
 

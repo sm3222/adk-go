@@ -21,7 +21,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"google.golang.org/adk/cmd/launcher/adk"
+	"google.golang.org/adk/cmd/launcher"
 	weblauncher "google.golang.org/adk/cmd/launcher/web"
 	"google.golang.org/adk/internal/cli/util"
 	restapiweb "google.golang.org/adk/server/restapi/web"
@@ -66,9 +66,9 @@ func (a *apiLauncher) UserMessage(webURL string, printer func(v ...any)) {
 }
 
 // SetupSubrouters adds the API router to the parent router.
-func (a *apiLauncher) SetupSubrouters(router *mux.Router, adkConfig *adk.Config) error {
+func (a *apiLauncher) SetupSubrouters(router *mux.Router, config *launcher.Config) error {
 	rAPI := router.Methods("GET", "POST", "DELETE", "OPTIONS").PathPrefix("/api/").Subrouter()
-	restapiweb.SetupRouter(rAPI, adkConfig)
+	restapiweb.SetupRouter(rAPI, config)
 	rAPI.Use(corsWithArgs(a.config.frontendAddress))
 	return nil
 }

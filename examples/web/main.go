@@ -23,7 +23,7 @@ import (
 	"google.golang.org/adk/agent"
 	"google.golang.org/adk/agent/llmagent"
 	"google.golang.org/adk/artifact"
-	"google.golang.org/adk/cmd/launcher/adk"
+	"google.golang.org/adk/cmd/launcher"
 	"google.golang.org/adk/cmd/launcher/full"
 	"google.golang.org/adk/examples/web/agents"
 	"google.golang.org/adk/model"
@@ -86,7 +86,7 @@ func main() {
 
 	artifactservice := artifact.InMemoryService()
 
-	config := &adk.Config{
+	config := &launcher.Config{
 		ArtifactService: artifactservice,
 		SessionService:  sessionService,
 		AgentLoader:     agentLoader,
